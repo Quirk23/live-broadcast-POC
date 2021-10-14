@@ -31,9 +31,25 @@ function main() {
     }
   `;
 
+  const vsSource2 = `
+    attribute vec4 aVertexPosition;
+    attribute vec2 aTextureCoord;
+
+    uniform mat4 uModelViewMatrix;
+    uniform mat4 uProjectionMatrix;
+    uniform vec2 offset;
+
+    varying highp vec2 vTextureCoord;
+
+    void main(void) {
+      gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+      vTextureCoord = aTextureCoord + offset;
+    }
+  `;
+
 
   // Fragment shader program
-  const fsSource2 = `
+  const fsSource = `
   varying highp vec2 vTextureCoord;
 
   uniform sampler2D uSampler;
@@ -45,9 +61,9 @@ function main() {
 
   // Initialize a shader program; this is where all the lighting
   // for the vertices and so forth is established.
-  const shaderProgram = initShaderProgram(gl, vsSource, fsSource2);
-  const shaderProgram2 = initShaderProgram(gl, vsSource, fsSource2);
-  const shaderProgram3 = initShaderProgram(gl, vsSource, fsSource2);
+  const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
+  const shaderProgram2 = initShaderProgram(gl, vsSource2, fsSource);
+  const shaderProgram3 = initShaderProgram(gl, vsSource, fsSource);
   // Collect all the info needed to use the shader program.
   // Look up which attribute our shader program is using
   // for aVertexPosition and look up uniform locations.
@@ -111,24 +127,27 @@ function main() {
   ]
 
   const video = setupVideo('Firefox.mp4');
-
+  console.log(video)
   const buffers = initBufferRect(gl, positions);
   const buffers2 = initBufferRect(gl, positions2)
   const buffers3 = initBufferRect(gl, positionsVid);
   // Draw the scene
 
-  const texture1 = initCanvasTexture("Title", 160, 100);
+  const texture1 = initCanvasTexture("Title", 190, 100);
   const texture2 = initCanvasTexture("Accordion", 1000, 100);
   const textureVid = initTexture(gl);
 
-  const render = () => {
+  const render = (time) => {
+    time *= 0.001;
+    var offset = [(time * .2) % 1.5 - 0.7, 0]
+
     if (copyVideo) {
       updateTexture(gl, textureVid, video);
     }
 
     // drawScene(gl, programInfo, buffers);
     // drawScene(gl, programInfo2, buffers2);
-    drawScenes(gl, [programInfo, programInfo2, programInfo3], [buffers, buffers2, buffers3], [texture1, texture2, textureVid])
+    drawScenes(gl, [programInfo, programInfo2, programInfo3], [buffers, buffers2, buffers3], [texture1, texture2, textureVid], offset)
     requestAnimationFrame(render);
   }
   requestAnimationFrame(render);
@@ -324,7 +343,7 @@ function drawScene(gl, programInfo, buffers) {
 
 }
 
-function drawScenes(gl, programInfos, buffers, textures) {
+function drawScenes(gl, programInfos, buffers, textures, offset) {
   gl.clearColor(1.0, 0.5, 0.4, 1.0);  // Clear to black, fully opaque
   gl.clearDepth(1.0);                 // Clear everything
   gl.enable(gl.DEPTH_TEST);           // Enable depth testing
@@ -415,8 +434,14 @@ function drawScenes(gl, programInfos, buffers, textures) {
 
 
     gl.useProgram(programInfo.program);
+    //Obtain the offset value
 
+    var offsetLoc = gl.getUniformLocation(programInfo.program, 'offset');
+
+    //Set offset
+    gl.uniform2fv(offsetLoc, offset)
     // Set the shader uniforms
+
 
     gl.uniformMatrix4fv(
       programInfo.uniformLocations.projectionMatrix,
@@ -521,7 +546,7 @@ function initCanvasTexture(text, canvasWidth, canvasHeight) {
   ctx.fillRect(0, 0, textCanvas.width, textCanvas.height);
 
   // Setup font
-  ctx.font = '36px bold sans-serif';
+  ctx.font = '48px bold sans-serif';
   ctx.fillStyle = 'white';
   ctx.textBaseline = 'middle';
   ctx.shadowColor = 'rgba(10, 160, 190, 1.0)';
@@ -551,11 +576,21 @@ function initCanvasTexture(text, canvasWidth, canvasHeight) {
 
 var copyVideo = false;
 
-function setupVideo(url) {
+
+ function setupVideo(url) {
   const video = document.createElement('video');
 
   var playing = false;
   var timeupdate = false;
+
+  navigator.mediaDevices.getUserMedia({video:true})
+  .then(function(stream) {
+    /* use the stream */
+    video.srcObject = stream;
+  })
+  .catch(function(err) {
+    /* handle the error */
+  });
 
   video.autoplay = true;
   video.muted = true;
@@ -574,8 +609,9 @@ function setupVideo(url) {
     checkReady();
   }, true);
 
-  video.src = url;
+  // video.src = url;
   video.play();
+
 
   function checkReady() {
     if (playing && timeupdate) {
