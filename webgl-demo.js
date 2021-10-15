@@ -3,6 +3,55 @@ main();
 //
 // Start here
 //
+function addTitle(gl, text, bufferArray, textureArray) {
+  // Here's where we call the routine that builds all the
+  // objects we'll be drawing.
+  const positions = [
+    -2.3, -0.8,
+    -3.4, -0.8,
+    -2.3, -1.4,
+    -3.4, -1.4,
+  ];
+
+
+  const buffer = initBufferRect(gl, positions);
+  const texture = initCanvasTexture(text, 190, 100);
+  bufferArray.push(buffer);
+  textureArray.push(texture)
+}
+
+function addBanner(gl, text, bufferArray, textureArray) {
+  // Here's where we call the routine that builds all the
+  // objects we'll be drawing.
+  const positions2 = [
+    3.5, -2,
+    -3.5, -2,
+    3.5, -2.5,
+    -3.5, -2.5,
+  ];
+
+  const buffer = initBufferRect(gl, positions2);
+  const texture = initCanvasTexture(text, 1000, 80);
+  bufferArray.push(buffer);
+  textureArray.push(texture)
+}
+
+function addVid(gl, bufferArray, textureArray, texture) {
+  // Here's where we call the routine that builds all the
+  // objects we'll be drawing.
+  const positionsVid = [
+    2.0, 1.8,
+    -2.0, 1.8,
+    2.0, -0.7,
+    -2.0, -0.7,
+  ]
+  const buffer = initBufferRect(gl, positionsVid);
+
+  bufferArray.push(buffer);
+  textureArray.push(texture)
+}
+
+
 function main() {
   const canvas = document.querySelector('#glcanvas');
   const gl = canvas.getContext('webgl');
@@ -103,39 +152,21 @@ function main() {
       modelViewMatrix: gl.getUniformLocation(shaderProgram3, 'uModelViewMatrix'),
     },
   };
-  // Here's where we call the routine that builds all the
-  // objects we'll be drawing.
-  const positions = [
-    -2.3, -0.8,
-    -3.4, -0.8,
-    -2.3, -1.4,
-    -3.4, -1.4,
-  ];
 
-  const positions2 = [
-    3.5, -2,
-    -3.5, -2,
-    3.5, -2.5,
-    -3.5, -2.5,
-  ];
-
-  const positionsVid = [
-    2.0, 1.8,
-    -2.0, 1.8,
-    2.0, -0.7,
-    -2.0, -0.7,
-  ]
 
   const video = setupVideo();
-  console.log(video)
-  const buffers = initBufferRect(gl, positions);
-  const buffers2 = initBufferRect(gl, positions2)
-  const buffers3 = initBufferRect(gl, positionsVid);
+
+  const bufferArray = [];
+  const textureArray = [];
   // Draw the scene
 
-  const texture1 = initCanvasTexture("Title", 190, 100);
-  const texture2 = initCanvasTexture("News", 1000, 80);
+
   const textureVid = initTexture(gl);
+
+  addTitle(gl, "Title", bufferArray, textureArray);
+  addBanner(gl, "Banner", bufferArray, textureArray);
+  addVid(gl, bufferArray, textureArray, textureVid)
+
 
   const render = (time) => {
     time *= 0.001;
@@ -144,10 +175,7 @@ function main() {
     if (copyVideo) {
       updateTexture(gl, textureVid, video);
     }
-
-    // drawScene(gl, programInfo, buffers);
-    // drawScene(gl, programInfo2, buffers2);
-    drawScenes(gl, [programInfo, programInfo2, programInfo3], [buffers, buffers2, buffers3], [texture1, texture2, textureVid], offset)
+    drawScenes(gl, [programInfo, programInfo2, programInfo3], bufferArray, textureArray, offset)
     requestAnimationFrame(render);
   }
   requestAnimationFrame(render);
@@ -294,11 +322,9 @@ function drawScene(gl, programInfo, buffers) {
   // Now move the drawing position a bit to where we want to
   // start drawing the square.
 
-  mat4.translate(modelViewMatrix,     // destination matrix
-    modelViewMatrix,     // matrix to translate
-    [0, 0, -6.0]);  // amount to translate
-
-
+  // mat4.translate(modelViewMatrix,     // destination matrix
+  //   modelViewMatrix,     // matrix to translate
+  //   [0, 0, -6.0]);  // amount to translate
 
   // Tell WebGL how to pull out the positions from the position
   // buffer into the vertexPosition attribute.
@@ -577,20 +603,20 @@ function initCanvasTexture(text, canvasWidth, canvasHeight) {
 var copyVideo = false;
 
 
- function setupVideo() {
+function setupVideo() {
   const video = document.createElement('video');
 
   var playing = false;
   var timeupdate = false;
 
-  navigator.mediaDevices.getUserMedia({video:true})
-  .then(function(stream) {
-    /* use the stream */
-    video.srcObject = stream;
-  })
-  .catch(function(err) {
-    /* handle the error */
-  });
+  navigator.mediaDevices.getUserMedia({ video: true })
+    .then(function (stream) {
+      /* use the stream */
+      video.srcObject = stream;
+    })
+    .catch(function (err) {
+      /* handle the error */
+    });
 
   video.autoplay = true;
   video.muted = true;
