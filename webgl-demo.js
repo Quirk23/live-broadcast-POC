@@ -126,7 +126,7 @@ function main() {
     -2.0, -0.7,
   ]
 
-  const video = setupVideo('Firefox.mp4');
+  const video = setupVideo();
   console.log(video)
   const buffers = initBufferRect(gl, positions);
   const buffers2 = initBufferRect(gl, positions2)
@@ -134,12 +134,12 @@ function main() {
   // Draw the scene
 
   const texture1 = initCanvasTexture("Title", 190, 100);
-  const texture2 = initCanvasTexture("Accordion", 1000, 100);
+  const texture2 = initCanvasTexture("News", 1000, 80);
   const textureVid = initTexture(gl);
 
   const render = (time) => {
     time *= 0.001;
-    var offset = [(time * .2) % 1.5 - 0.7, 0]
+    var offset = [(time * .2) % 1.3 - 0.7, 0]
 
     if (copyVideo) {
       updateTexture(gl, textureVid, video);
@@ -577,7 +577,7 @@ function initCanvasTexture(text, canvasWidth, canvasHeight) {
 var copyVideo = false;
 
 
- function setupVideo(url) {
+ function setupVideo() {
   const video = document.createElement('video');
 
   var playing = false;
