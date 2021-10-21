@@ -222,8 +222,8 @@ function main() {
     // console.log(fps);
 
     const counter = document.getElementById("FPS");
-    counter.innerText = fps;
-    
+    counter.innerText = Math.floor(fps);
+
     if (copyVideo) {
       updateTexture(gl, textureVid, video);
     }
