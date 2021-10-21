@@ -51,6 +51,17 @@ function addVid(gl, bufferArray, textureArray, texture) {
   textureArray.push(texture)
 }
 
+function addVidAtPos(gl, bufferArray, textureArray, texture, positionsVid) {
+  // Here's where we call the routine that builds all the
+  // objects we'll be drawing.
+
+  const buffer = initBufferRect(gl, positionsVid);
+
+  bufferArray.push(buffer);
+  textureArray.push(texture)
+}
+
+
 
 function main() {
   const canvas = document.querySelector('#glcanvas');
@@ -62,6 +73,10 @@ function main() {
     alert('Unable to initialize WebGL. Your browser or machine may not support it.');
     return;
   }
+
+  debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+  vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+  renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
 
   // Vertex shader program
 
@@ -113,6 +128,7 @@ function main() {
   const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
   const shaderProgram2 = initShaderProgram(gl, vsSource2, fsSource);
   const shaderProgram3 = initShaderProgram(gl, vsSource, fsSource);
+  const shaderProgram4 = initShaderProgram(gl, vsSource, fsSource);
   // Collect all the info needed to use the shader program.
   // Look up which attribute our shader program is using
   // for aVertexPosition and look up uniform locations.
@@ -153,6 +169,18 @@ function main() {
     },
   };
 
+  const programInfo4 = {
+    program: shaderProgram4,
+    attribLocations: {
+      vertexPosition: gl.getAttribLocation(shaderProgram4, 'aVertexPosition'),
+      textureCoord: gl.getAttribLocation(shaderProgram4, 'aTextureCoord'),
+    },
+    uniformLocations: {
+      projectionMatrix: gl.getUniformLocation(shaderProgram4, 'uProjectionMatrix'),
+      modelViewMatrix: gl.getUniformLocation(shaderProgram4, 'uModelViewMatrix'),
+    },
+  };
+
 
   const video = setupVideo();
 
@@ -163,19 +191,43 @@ function main() {
 
   const textureVid = initTexture(gl);
 
+  const positionsVid = [
+    2.0, 1.8,
+    0.0, 1.8,
+    2.0, -0.7,
+    0.0, -0.7,
+  ]
+
+  const positionsVid2 = [
+    -2.5, 1.8,
+    -0.5, 1.8,
+    -2.5, -0.7,
+    -0.5, -0.7,
+  ]
+
   addTitle(gl, "Title", bufferArray, textureArray);
   addBanner(gl, "Banner", bufferArray, textureArray);
-  addVid(gl, bufferArray, textureArray, textureVid)
+  // addVid(gl, bufferArray, textureArray, textureVid);
+  addVidAtPos(gl, bufferArray, textureArray, textureVid, positionsVid);
+  addVidAtPos(gl, bufferArray, textureArray, textureVid, positionsVid2);
 
-
+  let then = 0;
   const render = (time) => {
     time *= 0.001;
+    const deltaTime = time - then;
+    then = time;
     var offset = [(time * .2) % 1.3 - 0.7, 0]
 
+    const fps = 1/deltaTime;
+    // console.log(fps);
+
+    const counter = document.getElementById("FPS");
+    counter.innerText = fps;
+    
     if (copyVideo) {
       updateTexture(gl, textureVid, video);
     }
-    drawScenes(gl, [programInfo, programInfo2, programInfo3], bufferArray, textureArray, offset)
+    drawScenes(gl, [programInfo, programInfo2, programInfo3, programInfo4], bufferArray, textureArray, offset)
     requestAnimationFrame(render);
   }
   requestAnimationFrame(render);
@@ -562,11 +614,10 @@ function initCanvasTexture(text, canvasWidth, canvasHeight) {
 
   var texture = gl.createTexture();
   var textCanvas = document.createElement('canvas');
-  textCanvas.width = canvasWidth;
-  textCanvas.height = canvasHeight;
 
   var ctx = textCanvas.getContext('2d');
-
+  textCanvas.width = canvasWidth;
+  textCanvas.height = canvasHeight;
   // Setup background
   ctx.fillStyle = 'rgba(53, 60, 145, 1.0)';
   ctx.fillRect(0, 0, textCanvas.width, textCanvas.height);
